@@ -1,5 +1,6 @@
 service: aws-python-http-api-project
 frameworkVersion: '3'
+useDotenv: true
 
 provider:
   name: aws
@@ -9,6 +10,10 @@ provider:
       Action:
         - "dynamodb:GetItem"
       Resource: !GetAtt usersTable.Arn
+    - Effect: "Allow"
+      Action:
+        - "secretsmanager:GetSecretValue"
+      Resource: !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:dd_secrets-0Y3Cbj
   httpApi:
     authorizers:
       customAuthorizer:
@@ -36,8 +41,7 @@ functions:
 
 plugins:
   - serverless-python-requirements
-
-
+  - serverless-plugin-datadog
 resources: # CloudFormation template syntax from here on.
   Resources:
     usersTable:
@@ -53,3 +57,8 @@ resources: # CloudFormation template syntax from here on.
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
+
+custom:
+  datadog:
+    site: us5.datadoghq.com
+    apiKey: ${env:apiKey}

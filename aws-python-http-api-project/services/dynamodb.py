@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 class Users:
-    """Encapsulates an Amazon DynamoDB table of movie data."""
+    """Encapsulates an Amazon DynamoDB table of user data."""
     def __init__(self, table):
         """
         :param dyn_resource: A Boto3 DynamoDB resource.
@@ -15,7 +15,7 @@ class Users:
 
     def get_user(self, username):
         """
-        Gets movie data from the table for a specific user.
+        Gets user data from the table for a specific user.
 
         :param user: user.
         """
