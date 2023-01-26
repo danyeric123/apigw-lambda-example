@@ -1,10 +1,8 @@
 import re
 import jwt
+import json
 
 def lambda_handler(event, context):
-    print(f"{event['headers']=}")
-    print("Client token: " + event['headers']['authorization-token'])
-    print("Method ARN: " + event['routeArn'])
 
     '''
     Validate the incoming token and produce the principal user identifier
@@ -46,9 +44,22 @@ def lambda_handler(event, context):
     policy.restApiId = apiGatewayArnTmp[0]
     policy.region = tmp[3]
     policy.stage = apiGatewayArnTmp[1]
+
+    if 'authorization-token' not in event['headers']:
+      policy.denyAllMethods()
+      authResponse = policy.build()
+      return authResponse
+
+    print("Client token: " + event['headers']['authorization-token'])
+    print("Method ARN: " + event['routeArn'])
     
     token = event['headers']['authorization-token']
-    payload = jwt.decode(token, key='my_super_secret', algorithms=['HS256', ])
+    try:
+      payload = jwt.decode(token, key='my_super_secret', algorithms=['HS256', ])
+    except jwt.exceptions.DecodeError:
+      policy.denyAllMethods()
+      authResponse = policy.build()
+      return authResponse
     if payload["username"] == "david" and payload["password"] == "test":
         policy.allowAllMethods()
     else:
@@ -57,19 +68,6 @@ def lambda_handler(event, context):
 
     # Finally, build the policy
     authResponse = policy.build()
-
-    # new! -- add additional key-value pairs associated with the authenticated principal
-    # these are made available by APIGW like so: $context.authorizer.<key>
-    # additional context is cached
-    context = {
-        'key': 'value',  # $context.authorizer.key -> value
-        'number': 1,
-        'bool': True
-    }
-    # context['arr'] = ['foo'] <- this is invalid, APIGW will not accept it
-    # context['obj'] = {'foo':'bar'} <- also invalid
-
-    authResponse['context'] = context
 
     return authResponse
 
