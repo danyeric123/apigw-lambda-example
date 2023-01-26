@@ -1,6 +1,9 @@
 import re
 
+import boto3
 import jwt
+
+from services.dynamodb import Users
 
 
 def lambda_handler(event, context):
@@ -61,7 +64,13 @@ def lambda_handler(event, context):
       policy.denyAllMethods()
       authResponse = policy.build()
       return authResponse
-    if payload["username"] == "david" and payload["password"] == "test":
+    
+    table = boto3.resource('dynamodb').Table("usersTable")
+    users = Users(table)
+
+    found_user = users.get_user(username=payload["username"])
+
+    if payload["username"] == found_user["username"] and payload["password"] == found_user["password"]:
         policy.allowAllMethods()
     else:
         policy.denyAllMethods()

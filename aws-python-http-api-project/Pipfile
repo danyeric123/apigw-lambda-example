@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 pyjwt = "*"
+boto3 = "*"
 
 [dev-packages]
 isort = "*"

@@ -1,6 +1,9 @@
 import json
 
+import boto3
 import jwt
+
+from services.dynamodb import Users
 
 
 def login(event, context):
@@ -19,6 +22,17 @@ def login(event, context):
             'statusCode': 403,
             "body": json.dumps("Unauthorized: Name or password was not passed")
         }
+
+    
+    table = boto3.resource('dynamodb').Table("usersTable")
+    users = Users(table)
+
+    found_password = users.get_user(username=name).get("password")
+
+    print(f"{found_password=}")
+
+    if found_password != password:
+        return {"statusCode": 403, "body": json.dumps({"reason": "incorrect password"})}
     
     payload = {
         "username": name,
