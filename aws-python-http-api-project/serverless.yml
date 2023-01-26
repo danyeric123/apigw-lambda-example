@@ -1,0 +1,33 @@
+service: aws-python-http-api-project
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.9
+  httpApi:
+    authorizers:
+      customAuthorizer:
+        type: request
+        functionName: authorizerFunc
+
+functions:
+  login:
+    handler: handler.login
+    events:
+      - httpApi:
+          path: /login
+          method: post
+  hello:
+    handler: handler.hello
+    events:
+      - httpApi:
+          path: /
+          method: get
+          authorizer: 
+            name: customAuthorizer
+  authorizerFunc:
+    handler: authorizer.lambda_handler
+
+
+plugins:
+  - serverless-python-requirements
