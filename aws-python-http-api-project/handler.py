@@ -1,9 +1,11 @@
 import json
 import logging
+from datetime import datetime, timedelta, timezone
 
 import boto3
 import jwt
 from services.dynamodb import Users
+from services.secrets import get_secret
 
 logging.getLogger().setLevel(logging.INFO)
 
@@ -15,7 +17,6 @@ def login(event, context):
     password = body.get("password")
 
     logging.info(f"{name=}")
-    logging.info(f"{password=}")
     logging.info(f"{body=}")
 
     if not name or not password:
@@ -28,21 +29,20 @@ def login(event, context):
     table = boto3.resource('dynamodb').Table("usersTable")
     users = Users(table)
 
-    found_password = users.get_user(username=name).get("password")
+    found_user = users.get_user(username=name)
 
-    logging.info(f"{found_password=}")
+    logging.info(f"{found_user=}")
 
-    if found_password != password:
+    if found_user.get("password") != password:
         return {"statusCode": 403, "body": json.dumps({"reason": "incorrect password"})}
     
     payload = {
         "username": name,
-        "password": password
+        "scope": found_user.get("scope"),
+        "exp": datetime.now(tz=timezone.utc) + timedelta(days=1)
     }
 
-    my_secret = 'my_super_secret'
-
-    token = jwt.encode(payload=payload, key=my_secret)
+    token = jwt.encode(payload=payload, key=get_secret())
     
     body = {
         "token": token

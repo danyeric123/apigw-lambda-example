@@ -2,8 +2,8 @@ import re
 
 import boto3
 import jwt
-
 from services.dynamodb import Users
+from services.secrets import get_secret
 
 
 def lambda_handler(event, context):
@@ -59,8 +59,8 @@ def lambda_handler(event, context):
     
     token = event['headers']['authorization-token']
     try:
-      payload = jwt.decode(token, key='my_super_secret', algorithms=['HS256', ])
-    except jwt.exceptions.DecodeError:
+      payload = jwt.decode(token, key=get_secret(), algorithms=['HS256', ])
+    except (jwt.exceptions.DecodeError, jwt.exceptions.ExpiredSignatureError):
       policy.denyAllMethods()
       authResponse = policy.build()
       return authResponse
@@ -70,7 +70,7 @@ def lambda_handler(event, context):
 
     found_user = users.get_user(username=payload["username"])
 
-    if payload["username"] == found_user["username"] and payload["password"] == found_user["password"]:
+    if payload["username"] == found_user["username"] and "superuser" == found_user["scope"]:
         policy.allowAllMethods()
     else:
         policy.denyAllMethods()
